@@ -1,17 +1,97 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MobileNav from "@/components/MobileNav";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Navigation, Clock } from "lucide-react";
 
+interface RouteStop {
+  name: string;
+  time: string;
+}
+
+const routeData: Record<string, RouteStop[]> = {
+  Alandur: [
+    { name: "VIT College", time: "1:30 PM" },
+    { name: "Sanatorium", time: "1:38 PM" },
+    { name: "Chromepet", time: "1:45 PM" },
+    { name: "Pallavaram", time: "1:52 PM" },
+    { name: "Airport", time: "1:58 PM" },
+    { name: "Meenambakkam", time: "2:03 PM" },
+    { name: "Alandur Metro", time: "2:10 PM" },
+  ],
+  Tambaram: [
+    { name: "VIT College", time: "1:30 PM" },
+    { name: "Vandalur", time: "1:42 PM" },
+    { name: "Perungalathur", time: "1:50 PM" },
+    { name: "Tambaram", time: "2:00 PM" },
+  ],
+  Sholinganallur: [
+    { name: "VIT College", time: "1:30 PM" },
+    { name: "Chetinad Hospital", time: "1:40 PM" },
+    { name: "Satyabama College", time: "1:48 PM" },
+    { name: "Sholinganallur", time: "2:00 PM" },
+  ],
+  Velachery: [
+    { name: "VIT College", time: "1:30 PM" },
+    { name: "Phoenix Mall", time: "1:42 PM" },
+    { name: "Velachery Toll", time: "1:50 PM" },
+    { name: "Velachery", time: "2:00 PM" },
+  ],
+};
+
 const Tracking = () => {
-  const [selectedRoute] = useState("Alandur");
+  const [bookedRoute, setBookedRoute] = useState<string | null>(null);
+  const [currentStopIndex, setCurrentStopIndex] = useState(2);
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const userData = localStorage.getItem("vshuttle_user");
+    if (!userData) {
+      navigate("/login");
+      return;
+    }
+
+    const user = JSON.parse(userData);
+    const activeBooking = user.bookings?.find(
+      (booking: any) => booking.status === "active"
+    );
+
+    if (activeBooking) {
+      setBookedRoute(activeBooking.route);
+    }
+  }, [navigate]);
+
+  if (!bookedRoute) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="bg-gradient-hero p-6 text-primary-foreground">
+          <h1 className="text-2xl font-bold mb-2">Live Tracking</h1>
+          <p className="text-sm opacity-90">Track your shuttle in real-time</p>
+        </header>
+        <div className="p-4">
+          <Card className="p-8 text-center">
+            <MapPin className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+            <h2 className="text-lg font-semibold mb-2">No Active Booking</h2>
+            <p className="text-sm text-muted-foreground">
+              Book a shuttle to track it in real-time
+            </p>
+          </Card>
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  const stops = routeData[bookedRoute];
+  const currentStop = stops[currentStopIndex];
+  const nextStop = currentStopIndex < stops.length - 1 ? stops[currentStopIndex + 1] : null;
   
   const busInfo = {
-    route: selectedRoute,
-    currentLocation: "Near Velachery Bypass",
-    eta: "12 mins",
-    nextStop: "Velachery Toll",
+    route: bookedRoute,
+    currentLocation: `Near ${currentStop.name}`,
+    eta: nextStop ? "8 mins" : "Arriving soon",
+    nextStop: nextStop?.name || "Final destination",
     speed: "45 km/h",
     status: "On Time"
   };
@@ -82,28 +162,29 @@ const Tracking = () => {
         <Card className="p-4">
           <h3 className="font-bold mb-4">Route Stops</h3>
           <div className="space-y-3">
-            {[
-              { name: "VIT Campus", time: "1:30 PM", status: "completed" },
-              { name: "Kelambakkam", time: "1:40 PM", status: "completed" },
-              { name: "Velachery Toll", time: "1:50 PM", status: "current" },
-              { name: selectedRoute, time: "2:00 PM", status: "upcoming" },
-            ].map((stop, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div
-                  className={`w-3 h-3 rounded-full ${
-                    stop.status === "completed"
-                      ? "bg-success"
-                      : stop.status === "current"
-                      ? "bg-primary animate-pulse"
-                      : "bg-muted"
-                  }`}
-                />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{stop.name}</p>
-                  <p className="text-xs text-muted-foreground">{stop.time}</p>
+            {stops.map((stop, index) => {
+              const status = 
+                index < currentStopIndex ? "completed" :
+                index === currentStopIndex ? "current" : "upcoming";
+              
+              return (
+                <div key={index} className="flex items-center gap-3">
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      status === "completed"
+                        ? "bg-success"
+                        : status === "current"
+                        ? "bg-primary animate-pulse"
+                        : "bg-muted"
+                    }`}
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{stop.name}</p>
+                    <p className="text-xs text-muted-foreground">{stop.time}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       </div>

@@ -66,8 +66,15 @@ const Booking = () => {
 
   const seatLayout = generateSeats();
 
-  // Simulate some booked seats
-  const bookedSeats = ["A1", "B2", "C4", "D1", "E3", "A5", "C7"];
+  // Different booked seats for each route
+  const bookedSeatsByRoute: Record<string, string[]> = {
+    Alandur: ["A1", "B2", "C4", "D1", "E3", "A5", "C7", "B8"],
+    Tambaram: ["A2", "C1", "D3", "E2", "B5", "C6", "A9", "D8"],
+    Sholinganallur: ["B1", "C2", "E1", "A4", "D5", "B7", "C9", "E6"],
+    Velachery: ["C3", "D2", "A3", "E4", "B6", "A8", "C8", "D9"],
+  };
+
+  const bookedSeats = bookedSeatsByRoute[selectedRoute] || [];
 
   const handleConfirmBooking = () => {
     if (hasActiveBooking) {
